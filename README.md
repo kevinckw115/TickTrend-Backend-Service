@@ -1,143 +1,199 @@
-# TickTrend Backend
 
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95.0+-teal.svg)](https://fastapi.tiangolo.com/)
+# TickTrend 🕒
 
-TickTrend Backend is a Python-based service built with FastAPI and Google Cloud Firestore to pull, process, and aggregate eBay sales data for watches. It identifies watch models, tracks pricing trends, and provides precomputed trending lists, serving as the backbone for a watch market analysis platform.
+**TickTrend** is a cloud-native FastAPI application hosted on Google Cloud Platform (GCP). It aggregates eBay watch sales data to provide market trends, pricing insights, and user collection management. Built with Firestore, Cloud Build, and Cloud Run for scalability and security.
 
-## Features
+---
 
-- **eBay Data Pull**: Fetches recent watch sales from eBay’s Buy API with deduplication.
-- **Watch Identification**: Dynamically identifies watch models and assigns unique SKUs.
-- **Aggregation**: Computes daily and 4-hour price aggregates, filtering low-quality sales.
-- **Trending Lists**: Precomputes trending watches by sales volume and price growth.
-- **API Endpoints**: Exposes RESTful endpoints for watch details, price history, and trends.
+## 📋 Table of Contents
 
-## Prerequisites
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Setup](#-setup)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Contact](#-contact)
 
-- Python 3.9+
-- Google Cloud Project with Firestore enabled
-- eBay Developer API credentials (App ID and Cert ID)
-- Firebase Admin SDK service account key
+---
 
-## Installation
+## ✨ Features
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/yourusername/ticktrend-backend.git
-   cd ticktrend-backend
-   ```
+- **eBay Sales Aggregation**: Tracks watch sales from eBay's API, identifying models and prices.
+- **Dynamic SKU Generation**: Creates unique SKUs based on brand and model.
+- **Quality Filtering**: Removes fake or low-quality sales using Firestore criteria.
+- **Trending Insights**: Precomputes trending watches by sales and price growth.
+- **Chrono Pulse**: Scrapes watch content with sentiment analysis.
+- **User Collections**: Manages authenticated user watch collections.
+- **Cloud Deployment**: Runs on Cloud Run with CI/CD via Cloud Build.
 
-2. **Set Up a Virtual Environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+---
 
-3. **Install Dependencies**
+## 🏗️ Architecture
+
+- **Backend**: FastAPI for API endpoints and eBay integration.
+- **Database**: Firestore for watch models, sales, and user data.
+- **Secrets**: Google Cloud Secret Manager for secure API credentials.
+- **CI/CD**: Cloud Build for automated builds and deployments.
+- **Authentication**: Firebase Authentication for secure access.
+- **External APIs**: eBay Browse API and RSS feeds for data and content.
+
+---
+
+## ✅ Prerequisites
+
+- Google Cloud account with billing enabled
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`)
+- [Docker](https://www.docker.com/get-started)
+- Python 3.11
+- eBay API credentials ([eBay Developers Program](https://developer.ebay.com/))
+- Firebase Admin SDK credentials
+
+---
+
+## 🚀 Setup
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/your-username/ticktrend.git
+cd ticktrend
+```
+
+### 2. Configure Google Cloud
+
+- **Create Project**:
+  ```bash
+  gcloud projects create project-name --set-as-default
+  ```
+
+- **Enable APIs**:
+  ```bash
+  gcloud services enable cloudbuild.googleapis.com run.googleapis.com firestore.googleapis.com secretmanager.googleapis.com
+  ```
+
+- **Set Up Firebase**:
+  Initialize Firebase in the [GCP Console](https://console.firebase.google.com/) and download Admin SDK credentials.
+
+- **Configure IAM**:
+  ```bash
+  gcloud projects add-iam-policy-binding project-name \
+    --member=serviceAccount:PROJECT_NUMBER@cloudbuild.gserviceaccount.com \
+    --role=roles/run.admin
+  gcloud projects add-iam-policy-binding project-name \
+    --member=serviceAccount:PROJECT_NUMBER@cloudbuild.gserviceaccount.com \
+    --role=roles/iam.serviceAccountUser
+  ```
+
+### 3. Set Up Secrets
+
+- **Store eBay Credentials**:
+  ```bash
+  echo -n "your-ebay-auth-encoded" | gcloud secrets create ebay-auth-encoded --data-file=-
+  ```
+
+- **Grant Access**:
+  ```bash
+  gcloud secrets add-iam-policy-binding ebay-auth-encoded \
+    --member=serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com \
+    --role=roles/secretmanager.secretAccessor
+  ```
+
+### 4. Deploy
+
+- **Build and Deploy**:
+  ```bash
+  gcloud builds submit --config cloudbuild.yaml .
+  ```
+
+- **Verify**:
+  ```bash
+  gcloud run services describe project-service --region us-central1
+  ```
+
+---
+
+## 🛠️ Usage
+
+### API Endpoints
+
+| Endpoint | Description | Authentication |
+|----------|-------------|----------------|
+| `GET /` | Health check (`{ "status": "OK" }`) | None |
+| `GET /watches/{watch_id}` | Watch details | Required |
+| `GET /watches/{watch_id}/price-trend?period=30d` | Price trends | Required |
+| `GET /trending/sales?period=last_30_days` | Trending by sales | Required |
+| `GET /pulse/content` | Curated watch articles | None |
+| `POST /users/{user_id}/collection` | Add watch to collection | Required |
+
+Explore all endpoints in `main.py` or the upcoming API documentation.
+
+### Local Development
+
+1. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure Environment Variables**
-   Create a `.env` file in the root directory:
-   ```plaintext
-   GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
-   EBAY_APP_ID=your-ebay-app-id
-   EBAY_CERT_ID=your-ebay-cert-id
+2. **Set Up NLTK**:
+   ```bash
+   python -m nltk.downloader punkt punkt_tab -d ./nltk_data
+   export NLTK_DATA=./nltk_data
    ```
 
-5. **Initialize Firestore**
-   Ensure your Google Cloud project has Firestore in Native Mode. Place the service account key file at the path specified in `GOOGLE_APPLICATION_CREDENTIALS`.
+3. **Set Environment Variables**:
+   ```bash
+   export GCP_PROJECT_ID=project-name
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/firebase-adminsdk.json
+   ```
 
-## Usage
-
-1. **Run the Application**
+4. **Run**:
    ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    ```
-   The server will start at `http://localhost:8000`.
 
-2. **Access API Documentation**
-   - OpenAPI (Swagger): `http://localhost:8000/docs`
-   - ReDoc: `http://localhost:8000/redoc`
+   Access at `http://localhost:8000`.
 
-3. **Key Endpoints**
-   - **Pull eBay Data**: `GET /pull-ebay-data?max_sales_per_pull=50&hours_window=1`
-   - **Identify Sales**: `GET /identify-raw-sales`
-   - **Aggregate Data**: `GET /aggregate`
-   - **Precompute Trends**: `GET /precompute-trending`
-   - **Get Watch Details**: `GET /watches/{watch_id}`
-   - **Price History**: `GET /watches/{watch_id}/price-history?start_date=2025-01-01T00:00:00Z&end_date=2025-04-08T00:00:00Z`
-   - **Trending by Sales**: `GET /trending/sales?period=last_30_days`
-   - **Trending by Growth**: `GET /trending/growth?period=last_30_days`
+---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
-ticktrend-backend/
-├── main.py           # Core FastAPI application and endpoints
-├── requirements.txt  # Python dependencies
-├── .env              # Environment variables (not tracked)
-├── README.md         # Project documentation
-└── LICENSE           # License file
+ticktrend/
+├── Dockerfile        # Container configuration
+├── cloudbuild.yaml   # CI/CD configuration
+├── main.py           # FastAPI application
+├── requirements.txt  # Dependencies
+├── README.md         # This file
+└── nltk_data/        # NLTK data (generated)
 ```
 
-## Configuration
+---
 
-- **Firestore Collections**:
-  - `sales`: Stores raw eBay sales data.
-  - `watches`: Stores watch models with history.
-  - `trending`: Stores precomputed trending lists.
-  - `search_criteria`: Dynamic terms, regex, and weights.
-- **eBay API**: Uses the Buy Browse API (`item_summary/search`) with OAuth2 client credentials.
-
-## Development
-
-### Dependencies
-Install required packages:
-```bash
-pip install fastapi uvicorn google-cloud-firestore requests beautifulsoup4 rapidfuzz scikit-learn numpy
-```
-
-### Running Locally
-Use the `--reload` flag with `uvicorn` for hot-reloading during development.
-
-### Testing
-Add unit tests in a `tests/` directory using `pytest` (not included yet).
-
-## Deployment
-
-Deploy to Google Cloud Run or another serverless platform:
-1. Build a Docker image:
-   ```Dockerfile
-   FROM python:3.9-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install -r requirements.txt
-   COPY . .
-   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-   ```
-2. Deploy:
-   ```bash
-   gcloud run deploy ticktrend-backend --source . --region us-central1 --platform managed
-   ```
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature-name`.
-3. Commit changes: `git commit -m "Add feature"`.
-4. Push to the branch: `git push origin feature-name`.
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m "Add feature"`
+4. Push: `git push origin feature/your-feature`
 5. Open a pull request.
 
-Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and include tests with new features.
+Adhere to the [Contributor Covenant](https://www.contributor-covenant.org/).
 
-## License
+---
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+## 📜 License
 
-## Contact
+MIT License. See [LICENSE](LICENSE).
 
-For questions or support, open an issue or contact [kevin.ckw115@gmail.com].
+---
+
+## 📬 Contact
+
+- **Maintainer**: Your Name (your.email@example.com)
+- **Issues**: [GitHub Issues](https://github.com/your-username/ticktrend/issues)
+
+Thanks for exploring TickTrend! 🚀
+
