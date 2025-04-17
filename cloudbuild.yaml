@@ -1,0 +1,16 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/project-name/project-service:$COMMIT_SHA', '.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/project-name/project-service:$COMMIT_SHA']
+# Deploy to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  args: ['gcloud', 'run', 'deploy', 'project-service',
+         '--image', 'gcr.io/project-name/project-service:$COMMIT_SHA',
+         '--region', 'us-central1',
+         '--platform', 'managed',
+         '--allow-unauthenticated',
+         '--set-env-vars', 'GCP_PROJECT_ID=project-name']
+images:
+- 'gcr.io/project-name/project-service:$COMMIT_SHA'
+logsBucket: 'gs://project-name-build-logs'  # Explicitly set logs destination

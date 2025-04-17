@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+google-cloud-firestore
+firebase-admin
+requests
+rapidfuzz
+scikit-learn
+numpy
+nltk
+beautifulsoup4
+pytz
+pydantic
+textblob
+feedparser
+google-cloud-secret-manager
