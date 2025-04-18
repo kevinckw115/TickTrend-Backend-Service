@@ -192,8 +192,7 @@ MIT License. See [LICENSE](LICENSE).
 
 ## 📬 Contact
 
-- **Maintainer**: Your Name (your.email@example.com)
-- **Issues**: [GitHub Issues](https://github.com/your-username/ticktrend/issues)
+- **Maintainer**: Your Name (kevin.ckw115@gmail.com)
 
 Thanks for exploring TickTrend! 🚀
 
