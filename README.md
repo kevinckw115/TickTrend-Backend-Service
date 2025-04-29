@@ -119,16 +119,45 @@ cd ticktrend
 
 ### API Endpoints
 
-| Endpoint | Description | Authentication |
-|----------|-------------|----------------|
-| `GET /` | Health check (`{ "status": "OK" }`) | None |
-| `GET /watches/{watch_id}` | Watch details | Required |
-| `GET /watches/{watch_id}/price-trend?period=30d` | Price trends | Required |
-| `GET /trending/sales?period=last_30_days` | Trending by sales | Required |
-| `GET /pulse/content` | Curated watch articles | None |
-| `POST /users/{user_id}/collection` | Add watch to collection | Required |
+| Endpoint | Method | Description | Authentication | Key Parameters |
+|----------|--------|-------------|----------------|----------------|
+| `/watches/{watch_id}` | GET | Get watch details | Required | `watch_id` (path) |
+| `/watches/{watch_id}/sales` | GET | Fetch sales with filtering | Required | `watch_id` (path), `start_date`, `end_date`, `limit`, `offset` (query) |
+| `/watches/{watch_id}/price-trend` | GET | Get price trends | Required | `watch_id` (path), `period` (1d, 30d, 90d, 1y), `end_date` (query) |
+| `/watches` | GET | Search watches | Required | `brand`, `model`, `sort_by` (name, sales, price), `limit`, `offset` (query) |
+| `/users/{user_id}/collection` | POST | Add watch to collection | Required | `user_id` (path), `watch_id`, `purchase_price` (body) |
+| `/users/{user_id}/collection` | GET | Get user collection | Required | `user_id` (path) |
+| `/users/{user_id}/collection/{watch_id}` | DELETE | Remove watch from collection | Required | `user_id`, `watch_id` (path) |
+| `/trending/sales` | GET | Trending watches by sales | Required | `period` (last_7_days, last_30_days, last_90_days), `limit` (query) |
+| `/trending` | GET | Trending brands/models | Required | `limit`, `sort_by` (trend_score, mentions, sales_count), `trend_type` (brand, model), `min_sentiment` (query) |
+| `/pulse/content` | GET | Curated articles | Optional | `filter` (tag), `limit`, `offset` (query) |
+| `/brands/{brand}` | GET | Brand details | Required | `brand` (path) |
+| `/models/{model}` | GET | Model details | Required | `model` (path) |
+| `/pull-ebay-data` | GET | Pull eBay sales | Optional | `max_sales_per_pull`, `hours_window` (query) |
+| `/aggregate` | GET | Aggregate sales data | Optional | None |
+| `/fetch-missing-image-urls` | GET | Fetch missing image URLs | Optional | `limit`, `start_date` (query) |
+| `/consolidate-skus` | GET | Consolidate redundant SKUs | Optional | `limit` (query) |
+| `/clean-html` | GET | Clean HTML from sales | Optional | None |
+| `/reset-processed` | GET | Reset processed flags | Optional | `cutoff` (query, ISO date) |
+| `/precompute-trending` | GET | Precompute trends | Optional | `max_items` (query) |
+| `/pulse/sync` | GET | Sync content with sentiment | Optional | `token` (query) |
+| `/` | GET | Health check | None | None |
 
-Explore all endpoints in `main.py` or the upcoming API documentation.
+**Example Request** (Watch Details):
+```bash
+curl -H "Authorization: Bearer <firebase-token>" https://your-service-url.a.run.app/watches/rolex_submariner_date_116610ln_2020
+```
+
+**Example Response**:
+```json
+{
+  "watch_id": "rolex_submariner_date_116610ln_2020",
+  "brand": "Rolex",
+  "model_name": "Submariner Date",
+  "last_known_price": { "date": "2025-04-01", "avg_price": 15000.0 },
+  "total_sales": 120
+}
+```
 
 ### Local Development
 
@@ -161,13 +190,15 @@ Explore all endpoints in `main.py` or the upcoming API documentation.
 ## 📂 Project Structure
 
 ```
-ticktrend/
-├── Dockerfile        # Container configuration
-├── cloudbuild.yaml   # CI/CD configuration
-├── main.py           # FastAPI application
-├── requirements.txt  # Dependencies
-├── README.md         # This file
-└── nltk_data/        # NLTK data (generated)
+ticktrend-api/
+├── Dockerfile          # Docker configuration
+├── cloudbuild.yaml     # Google Cloud Build CI/CD
+├── requirements.txt    # Python dependencies
+├── main.py             # FastAPI app initialization
+├── frontend_routes.py  # User-facing API endpoints
+├── backend_routes.py   # Data processing endpoints
+├── services.py         # Business logic and utilities
+└── seed_models.py      # Watch model seeding script
 ```
 
 ---
