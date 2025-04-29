@@ -26,6 +26,9 @@ ENV NLTK_DATA=/usr/local/nltk_data
 
 # Copy your application code
 COPY main.py .
+COPY backend_routes.py .
+COPY frontend_routes.py .
+COPY services.py .
 
 # Expose port 8080 (Cloud Run expects this)
 EXPOSE 8080
